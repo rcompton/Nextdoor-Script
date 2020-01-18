@@ -10,6 +10,40 @@ from lxml import html
 import requests
 import json
 
+def get_post_urls(driver):
+    # Use Selenium to scroll to the bottom of the news feed and load more posts.
+    for _ in range(2):
+        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        time.sleep(1.6)
+    # Parse out the post links
+    buttons = driver.find_elements_by_xpath('//a[contains(@href, "news_feed/?post=")]')
+    urls = []
+    for button in buttons:
+        try:
+            urls.append(button.get_attribute('href'))
+        except Exception as e:
+            print(e)
+    return urls
+
+def parse_post(driver, post_url):
+    time.sleep(1.3)
+    driver.get(post_url)
+    # Click on "view all replies" when necessary to scrape all replies, do it a few times.
+    for _ in range(4):
+        more_comments_buttons = driver.find_elements_by_xpath(
+            '//button[contains(@class,"see-previous-comments-button-paged")]')
+        print("view all replies, more_comments_buttons: ", len(more_comments_buttons))
+        if not more_comments_buttons:
+            break
+        for more_comments_button in more_comments_buttons:
+            time.sleep(1.2)
+            try:
+                if (more_comments_button.is_displayed()):
+                    more_comments_button.click()
+            except Exception as e:
+                print(e)
+
+
 # Set up driver
 #driver = webdriver.Chrome()
 driver = webdriver.Chrome(ChromeDriverManager().install())
@@ -28,22 +62,18 @@ password.send_keys(os.getenv("NEXTDOOR_PASSWORD"))
 
 driver.find_element_by_id("signin_button").click()
 
-# Use Selenium to scroll 'range' number of times
-# Change the second number in 'range(x, y)' to determine how many times
-# you want it to scroll down.
-for i in range(1, 100):
-    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-    time.sleep(1.5)  # if not scrolling in time, make this number larger
+post_urls = get_post_urls(driver)
+import ipdb;ipdb.set_trace()
+print("num posts: ", len(post_urls))
+for post_url in post_urls:
+    time.sleep(1.2)
+    print(post_url)
+    parse_post(driver, post_url)
 
-# Click on "view all replies" when necessary to scrape all replies
-numberOfElementsFound = driver.find_elements_by_xpath(
-    '//a[@data-action="view-all-comments-link"]')
-for pos in range(0, len(numberOfElementsFound)):
-    if (numberOfElementsFound[pos].is_displayed()):
-        try:
-            numberOfElementsFound[pos].click()
-        except BaseException:
-            pass
+driver.quit()
+
+
+
 
 # Scrape the page source returned from Chrome driver for posts
 html_source = driver.page_source
@@ -118,4 +148,3 @@ for p in posts:
 
     counter += 1
 
-driver.quit()
