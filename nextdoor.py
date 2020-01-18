@@ -29,6 +29,7 @@ def parse_post(driver, post_url):
     time.sleep(1.3)
     driver.get(post_url)
     # Click on "view all replies" when necessary to scrape all replies, do it a few times.
+    #TODO "see more comments" and "See more to expand posts"
     for _ in range(4):
         more_comments_buttons = driver.find_elements_by_xpath(
             '//button[contains(@class,"see-previous-comments-button-paged")]')
